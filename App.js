@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import styles from './style/appStyles';
 import {
   SafeAreaView,
@@ -8,28 +8,28 @@ import {
   FlatList,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 
-const API = 'https://randomuser.me/api/?results=20';
-
 const App = () => {
-  const [data, setData] = React.useState([]);
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(API);
-      const json = await response.json();
-      setData(json.results);
-    } catch (error) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(
+          `https://randomuser.me/api/?page=${page}&results=10`,
+        );
+        const json = await response.json();
+        setData(d => [...d, ...json.results]);
+      } catch (error) {
+        Alert.alert('Error', error.message);
+      }
+    };
 
-  React.useEffect(() => {
     fetchUsers();
-  }, []);
-
-  console.log(data);
+  }, [page]);
 
   const renderItem = ({item}) => (
     <View style={styles.container}>
@@ -56,6 +56,18 @@ const App = () => {
     </View>
   );
 
+  const handleLoadMore = () => {
+    setPage(page + 1);
+  };
+
+  const renderFooter = () => {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.SafeAreaView}>
       <View style={styles.header}>
@@ -67,6 +79,9 @@ const App = () => {
           data={data}
           renderItem={renderItem}
           keyExtractor={item => item.email}
+          onEndReached={handleLoadMore}
+          ListFooterComponent={renderFooter}
+          onEndReachedThreshold={0.5}
         />
       </ScrollView>
     </SafeAreaView>
